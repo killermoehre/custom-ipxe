@@ -26,7 +26,7 @@ jobs:
         repository: ipxe/ipxe
         path: ipxe
 
-    - uses: actions/checkout«v2
+    - uses: actions/checkout@v2
       name: Checkout ${{ github.repository }}
       with:
         path: custom-ipxe
