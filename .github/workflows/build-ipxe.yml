@@ -32,7 +32,7 @@ jobs:
     - name: Put custom config into the build dir
       run: cp $GITHUB_WORKSPACE/general.h $GITHUB_WORKSPACE/ipxe/src/config/local/
     - name: Build iPXE EFI
-      run: make
+      run: make bin-x86_64-efi/ipxe.efi
       working-directory: ipxe/src
     - name: Upload ipxe.efi
       uses: actions/upload-artifact@v2.1.4
