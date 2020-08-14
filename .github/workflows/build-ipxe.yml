@@ -31,6 +31,9 @@ jobs:
         path: ipxe
     - name: Put custom config into the build dir
       run: cp $GITHUB_WORKSPACE/general.h $GITHUB_WORKSPACE/ipxe/src/config/local/
+    - name: Show which version will be build
+      run: make -C src version
+      working-directory: ipxe
     - name: Build iPXE EFI
       run: make -C src bin-x86_64-efi/ipxe.efi
       working-directory: ipxe
