@@ -19,9 +19,8 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: Install Build Dependencies
-      run: |
-        sudo apt-get install -y binutils-dev liblzma-dev syslinux genisoimage
+    - name: 'Install Build Dependencies'
+      run: sudo apt-get install -y binutils-dev liblzma-dev syslinux genisoimage
     - uses: actions/checkout@v2
       name: Checkout ${{ github.repository }}
     - uses: actions/checkout@v2
