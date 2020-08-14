@@ -27,7 +27,7 @@ jobs:
         repository: ipxe/ipxe
         path: ipxe
     - name: Put custom config into the build dir
-      run: cp $GITHUB_WORKSPACE/general.h $GITHUB_WORKSPACE/ipxe/src/confg/local/
+      run: cp $GITHUB_WORKSPACE/general.h $GITHUB_WORKSPACE/ipxe/src/config/local/
     - name: Build iPXE EFI
       run: make bin-x86_64-efi/ipxe.efi
       working-directory: $GITHUB_WORKSPACE/ipxe/src
