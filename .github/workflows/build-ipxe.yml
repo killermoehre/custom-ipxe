@@ -42,5 +42,5 @@ jobs:
               uses: actions/upload-artifact@v2.1.4
               with:
                   name: ipxe.efi
-                  path: $GITHUB_WORKSPACE/ipxe/src/bin-x86_64-efi/ipxe.efi
+                  path: ipxe/src/bin-x86_64-efi/ipxe.efi
                   if-no-files-found: error
