@@ -34,13 +34,9 @@ jobs:
     - name: Show which version will be build
       run: make -C src version
       working-directory: ipxe
-      env:
-        VERSION: 1.0.0
     - name: Build iPXE EFI
       run: make -C src bin-x86_64-efi/ipxe.efi
       working-directory: ipxe
-      env:
-        VERSION: 1.0.0
     - name: Upload ipxe.efi
       uses: actions/upload-artifact@v2.1.4
       with:
