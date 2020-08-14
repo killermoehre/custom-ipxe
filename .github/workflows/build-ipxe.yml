@@ -21,7 +21,7 @@ jobs:
     steps:
     - name: Install Build Dependencies
       run: |
-        sudo apt-get install -y make gcc binutils mtools perl liblzma-dev
+        sudo apt-get install -y binutils-dev liblzma-dev syslinux genisoimage
     - uses: actions/checkout@v2
       name: Checkout ${{ github.repository }}
     - uses: actions/checkout@v2
@@ -32,8 +32,8 @@ jobs:
     - name: Put custom config into the build dir
       run: cp $GITHUB_WORKSPACE/general.h $GITHUB_WORKSPACE/ipxe/src/config/local/
     - name: Build iPXE EFI
-      run: make bin-x86_64-efi/ipxe.efi
-      working-directory: ipxe/src
+      run: make -C src bin-x86_64-efi/ipxe.efi
+      working-directory: ipxe
     - name: Upload ipxe.efi
       uses: actions/upload-artifact@v2.1.4
       with:
