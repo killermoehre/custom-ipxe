@@ -19,10 +19,10 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - uses: ryankurte/action-apt@v0.1.0
-      name: Install Build Dependencies
-      with:
-        packages: "make gcc binutils mtools perl liblzma-dev"
+    - name: Install Build Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y make gcc binutils mtools perl liblzma-dev
     - uses: actions/checkout@v2
       name: Checkout ${{ github.repository }}
     - uses: actions/checkout@v2
