@@ -26,8 +26,9 @@ jobs:
     - uses: actions/checkout@v2
       name: Checkout ipxe/ipxe
       with:
-        repository: ipxe/ipxe
-        path: ipxe
+        repository: 'ipxe/ipxe'
+        ref: 'v1.20.0'
+        path: 'ipxe'
     - name: Put custom config into the build dir
       run: cp $GITHUB_WORKSPACE/general.h $GITHUB_WORKSPACE/ipxe/src/config/local/
     - name: Show which version will be build
