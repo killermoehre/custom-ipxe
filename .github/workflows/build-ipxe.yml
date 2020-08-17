@@ -5,6 +5,8 @@ on:
         branches: [master]
     pull_request:
         branches: [master]
+    schedule:
+        - cron: 35 01 * * *
 
 jobs:
     build:
@@ -25,14 +27,14 @@ jobs:
             - name: Get latest ipxe/ipxe tag json from API
               uses: JamesIves/fetch-api-data-action@1.0.15
               with:
-                  ENDPOINT: ${{ env.GITHUB_API_URL }}/repos/ipxe/ipxe/git/refs/tags
+                  ENDPOINT: https://api.github.com/repos/ipxe/ipxe/tags
                   SAVE_NAME: ipxe-ipxe-tags
             - name: Extract latest version tag from ipxe/ipxe json
-              run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[-1].ref | split("/")[-1]' fetch-api-data-action/ipxe-ipxe-tags.json)"
-            - uses: actions/checkout@v2
-              name: Checkout ${{ github.repository }}
-            - uses: actions/checkout@v2
-              name: Checkout ipxe/ipxe
+              run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
+            - name: Checkout ${{ github.repository }}
+              uses: actions/checkout@v2
+            - name: Checkout ipxe/ipxe
+              uses: actions/checkout@v2
               with:
                   repository: ipxe/ipxe
                   ref: ${{ env.ipxe-ipxe-tag }}
