@@ -90,7 +90,7 @@ jobs:
               uses: actions/checkout@v2
               with:
                   repository: ipxe/ipxe
-                  ref: ${{ $needs.check.outputs.new-release-version }}
+                  ref: ${{ needs.check.outputs.new-release-version }}
                   path: ipxe
             - name: Put custom config into the build dir
               run: >
@@ -137,8 +137,8 @@ jobs:
               id: create-release
               uses: actions/create-release@v1
               with:
-                  tag_name: ${{ needs.check.outputs.new-release-version }}-${{ env.current-tag }}
-                  release_name: Release iPXE ${{ needs.check.outputs.new-release-version }} (${{ env.current-tag }}) with HTTPS support
+                  tag_name: ${{ env.current-tag }}
+                  release_name: Release iPXE ${{ needs.check.outputs.new-release-version }} with HTTPS support
                   draft: false
                   prerelease: false
     upload-release:
