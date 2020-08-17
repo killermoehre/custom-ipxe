@@ -21,13 +21,21 @@ jobs:
                   liblzma-dev
                   syslinux
                   genisoimage
+                  jq
+            - name: Get latest ipxe/ipxe tag json from API
+              uses: JamesIves/fetch-api-data-action@1.0.15
+              with:
+                  ENDPOINT: ${{ env.GITHUB_API_URL }}/repos/ipxe/ipxe/git/refs/tags
+                  SAVE_NAME: ipxe-ipxe-tags
+            - name: Extract latest version tag from ipxe/ipxe json
+              run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[-1].ref | split("/")[-1]' fetch-api-data-action/ipxe-ipxe-tags.json)"
             - uses: actions/checkout@v2
               name: Checkout ${{ github.repository }}
             - uses: actions/checkout@v2
               name: Checkout ipxe/ipxe
               with:
                   repository: ipxe/ipxe
-                  ref: v1.20.1
+                  ref: ${{ env.ipxe-ipxe-tag }}
                   path: ipxe
             - name: Put custom config into the build dir
               run: >
@@ -39,11 +47,11 @@ jobs:
                   BINARY: ${{ matrix.binary }}
               run: make -C src "$BINARY"
               working-directory: ipxe
-            - name: Gef filename from ${{ matrix.binary }}
+            - name: Get filename from ${{ matrix.binary }}
               env:
                   BINARY: ${{ matrix.binary }}
               run: echo "::set-env name=filename::${BINARY##*/}"
-            - name: Upload ${{ matrix.binary }}
+            - name: Upload ${{ matrix.binary }} as ${{ env.filename }}
               uses: actions/upload-artifact@v2.1.4
               with:
                   name: ${{ env.filename }}
