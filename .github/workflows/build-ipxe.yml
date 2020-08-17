@@ -9,7 +9,6 @@ on:
         - cron: 35 01 * * *
 env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    BINARIES_TO_BUILD: "['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']"
 jobs:
     check:
         name: Check latest ipxe/ipxe release
@@ -69,7 +68,7 @@ jobs:
         runs-on: ubuntu-20.04
         strategy:
             matrix:
-                binary: ${{ env.BINARIES_TO_BUILD }}
+                binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
         needs: [check]
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
@@ -147,7 +146,7 @@ jobs:
         runs-on: ubuntu-20.04
         strategy:
             matrix:
-                binary: ${{ env.BINARIES_TO_BUILD }}
+                binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
         needs: [create-release]
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
