@@ -39,9 +39,13 @@ jobs:
                   BINARY: ${{ matrix.binary }}
               run: make -C src "$BINARY"
               working-directory: ipxe
+            - name: Gef filename from ${{ matrix.binary }}
+              env:
+                  BINARY: ${{ matrix.binary }}
+              run: echo "::set-env name=filename::${BINARY##*/}"
             - name: Upload ${{ matrix.binary }}
               uses: actions/upload-artifact@v2.1.4
               with:
-                  name: ${{ matrix.binary }}
+                  name: ${{ env.filename }}
                   path: ipxe/src/${{ matrix.binary }}
                   if-no-files-found: error
