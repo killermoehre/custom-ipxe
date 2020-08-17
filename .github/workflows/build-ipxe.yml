@@ -15,8 +15,33 @@ jobs:
             matrix:
                 binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
         steps:
+            - name: Get latest ipxe/ipxe tag json from API
+              uses: JamesIves/fetch-api-data-action@1.0.15
+              with:
+                  ENDPOINT: https://api.github.com/repos/ipxe/ipxe/tags
+                  SAVE_NAME: ipxe-ipxe-tags
+            - name: Get old ipxe/ipxe tag from artifact
+              uses: actions/download-artifact@v2.0.5
+              with:
+                  name: old-ipxe-ipxe-tag.json
+              continue-on-error: true
+            - name: Extract latest version tag from ipxe/ipxe json
+              run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
+            - name: Extract old version tag from artifact
+              run: echo "::set-env name=old-ipxe-ipxe-tag::$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
+            - name: Compare old and new ipxe/ipxe tag
+              env:
+                  OLD_TAG: ${{ env.old-ipxe-ipxe-tag }}
+                  NEW_TAG: ${{ env.ipxe-ipxe-tag }} 
+              run: |
+                  if [[ "$OLD_TAG" == "$NEW_TAG" ]]; then
+                      echo "::set-env name=new-release::false";
+                  else
+                      echo "::set-env name=new-release::true";
+                  fi
             - name: Create todays tag
               run: printf '::set-env name=current-tag::%(%Y-%m-%d)T\n' '-1'
+              if: env.new-release
             - name: Install Build Dependencies
               run: >
                   sudo
@@ -26,17 +51,7 @@ jobs:
                   syslinux
                   genisoimage
                   jq
-            - name: Get latest ipxe/ipxe tag json from API
-              uses: JamesIves/fetch-api-data-action@1.0.15
-              with:
-                  ENDPOINT: https://api.github.com/repos/ipxe/ipxe/tags
-                  SAVE_NAME: ipxe-ipxe-tags
-            - name: Extract latest version tag from ipxe/ipxe json
-              run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
-            - name: Get old ipxe/ipxe tag
-              uses: actions/download-artifact@v2.0.5
-              with:
-                  name: old-ipxe-ipxe-tag
+              if: env.new-release
             - name: Checkout ${{ github.repository }}
               uses: actions/checkout@v2
             - name: Checkout ipxe/ipxe
@@ -45,6 +60,7 @@ jobs:
                   repository: ipxe/ipxe
                   ref: ${{ env.ipxe-ipxe-tag }}
                   path: ipxe
+              if: env.new-release
             - name: Put custom config into the build dir
               run: >
                   cp
@@ -59,11 +75,20 @@ jobs:
               env:
                   BINARY: ${{ matrix.binary }}
               run: echo "::set-env name=filename::${BINARY##*/}"
+              if: env.new-release
             - name: Make release
               uses: eine/tip@master
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   files: ipxe/src/${{ matrix.binary }}
-                  rm: True
-                  snapshots: False
+                  rm: true
+                  snapshots: false
                   tag: ${{ env.current-tag }}
+              if: env.new-release
+            - name: Upload tag artifact
+              uses: actions/upload-artifact@v2.1.4
+              with:
+                  name: old-ipxe-ipxe-tags.json
+                  path: fetch-api-data-action/ipxe-ipxe-tags.json
+                  if-no-files-found: error
+              if: env.new-release
