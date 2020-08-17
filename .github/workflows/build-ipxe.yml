@@ -62,7 +62,7 @@ jobs:
                   name: old-ipxe-ipxe-tags.json
                   path: fetch-api-data-action/ipxe-ipxe-tags.json
                   if-no-files-found: error
-              if: ${{ steps.compare-releases.outputs.new-release }}
+              if: ${{ steps.compare-releases.outputs.is-new-release }}
     build:
         name: Build iPXE
         runs-on: ubuntu-20.04
