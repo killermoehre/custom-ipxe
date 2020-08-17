@@ -32,7 +32,11 @@ jobs:
                   echo "::set-env name=ipxe-ipxe-tag::${TAG}"
             - name: Extract old version tag from artifact
               run: |
-                  TAG="$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
+                  if [[ -e old-ipxe-ipxe-tags.json ]]; then
+                      TAG="$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
+                  else
+                      TAG="v0.0.0"
+                  fi
                   echo "::debug::NEW_TAG=$TAG"
                   echo "::set-env name=old-ipxe-ipxe-tag::${TAG}"
             - name: Compare old and new ipxe/ipxe tag
