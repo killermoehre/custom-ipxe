@@ -90,7 +90,7 @@ jobs:
               uses: actions/checkout@v2
               with:
                   repository: ipxe/ipxe
-                  ref: ${{ env.ipxe-ipxe-tag }}
+                  ref: ${{ $needs.check.outputs.new-release-version }}
                   path: ipxe
             - name: Put custom config into the build dir
               run: >
