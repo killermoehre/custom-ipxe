@@ -63,6 +63,7 @@ jobs:
                   syslinux
                   genisoimage
                   jq
+                  tree
               if: env.new-release
             - name: Checkout ${{ github.repository }}
               uses: actions/checkout@v2
