@@ -9,7 +9,9 @@ on:
 jobs:
     build:
         runs-on: ubuntu-20.04
-
+        strategy:
+            matrix:
+                binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
         steps:
             - name: Install Build Dependencies
               run: >
@@ -32,24 +34,14 @@ jobs:
                   cp
                   $GITHUB_WORKSPACE/general.h
                   $GITHUB_WORKSPACE/ipxe/src/config/local/
-            - name: Show which version will be build
-              run: make -C src version
+            - name: Build iPXE ${{ matrix.binary }}
+              env:
+                  BINARY: ${{ matrix.binary }}
+              run: make -C src "$BINARY"
               working-directory: ipxe
-            - name: Build iPXE EFI
-              run: make -C src bin-x86_64-efi/ipxe.efi
-              working-directory: ipxe
-            - name: Build iPXE undionly.kpxe
-              run: make -C src bin/undionly.kpxe
-              working-directory: ipxe
-            - name: Upload ipxe.efi
+            - name: Upload ${{ matrix.binary }}
               uses: actions/upload-artifact@v2.1.4
               with:
-                  name: ipxe.efi
-                  path: ipxe/src/bin-x86_64-efi/ipxe.efi
-                  if-no-files-found: error
-            - name: Upload undionly.kpxe
-              uses: actions/upload-artifact@v2.1.4
-              with:
-                  name: undionly.kpxe
-                  path: ipxe/src/bin/undionly.kpxe
+                  name: ${{ matrix.binary }}
+                  path: ipxe/src/${{ matrix.binary }}
                   if-no-files-found: error
