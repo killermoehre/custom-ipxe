@@ -15,6 +15,8 @@ jobs:
             matrix:
                 binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
         steps:
+            - name: Create todays tag
+              run: printf '::set-env name=current-tag::%(%Y-%m-%d)T\n' '-1'
             - name: Install Build Dependencies
               run: >
                   sudo
@@ -31,6 +33,10 @@ jobs:
                   SAVE_NAME: ipxe-ipxe-tags
             - name: Extract latest version tag from ipxe/ipxe json
               run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
+            - name: Get old ipxe/ipxe tag
+              uses: actions/download-artifact@v2.0.5
+              with:
+                  name: old-ipxe-ipxe-tag
             - name: Checkout ${{ github.repository }}
               uses: actions/checkout@v2
             - name: Checkout ipxe/ipxe
@@ -53,9 +59,11 @@ jobs:
               env:
                   BINARY: ${{ matrix.binary }}
               run: echo "::set-env name=filename::${BINARY##*/}"
-            - name: Upload ${{ matrix.binary }} as ${{ env.filename }}
-              uses: actions/upload-artifact@v2.1.4
+            - name: Make release
+              uses: eine/tip@master
               with:
-                  name: ${{ env.filename }}
-                  path: ipxe/src/${{ matrix.binary }}
-                  if-no-files-found: error
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  files: ipxe/src/${{ matrix.binary }}
+                  rm: True
+                  snapshots: False
+                  tag: ${{ env.current-tag }}
