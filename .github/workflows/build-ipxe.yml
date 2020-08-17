@@ -94,8 +94,10 @@ jobs:
                   tag: ${{ env.current-tag }}
               if: env.new-release
             - name: Debug File Listing
-              run: tree
-              if: ${{ secrets.ACTIONS_STEP_DEBUG && env.new-release }}
+              env:
+                  ACTIONS_STEP_DEBUG: secrets.ACTIONS_STEP_DEBUG
+              run: test "$ACTIONS_STEP_DEBUG" && tree
+              if: ${{ env.new-release }}
             - name: Upload tag artifact
               uses: actions/upload-artifact@v2.1.4
               with:
