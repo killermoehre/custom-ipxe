@@ -7,13 +7,16 @@ on:
         branches: [master]
     schedule:
         - cron: 35 01 * * *
-
+env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    BINARIES_TO_BUILD: "['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']"
 jobs:
-    build:
+    check:
+        name: Check latest ipxe/ipxe release
         runs-on: ubuntu-20.04
-        strategy:
-            matrix:
-                binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
+        outputs:
+            is-new-release: ${{ steps.compare-releases.outputs.is-new-release }}
+            new-release-version: ${{ steps.new-ipxe-ipxe-tag.outputs.new-release-version }}
         steps:
             - name: Get latest ipxe/ipxe tag json from API
               uses: JamesIves/fetch-api-data-action@1.0.15
@@ -26,11 +29,13 @@ jobs:
                   name: old-ipxe-ipxe-tag.json
               continue-on-error: true
             - name: Extract latest version tag from ipxe/ipxe json
+              id: new-ipxe-ipxe-tag
               run: |
                   TAG="$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
                   echo "::debug::OLD_TAG=$TAG"
                   echo "::set-env name=ipxe-ipxe-tag::${TAG}"
-            - name: Extract old version tag from artifact
+                  echo "::set-output name=new-release-version::${TAG}"
+            - name: Extract old version tag from old-ipxe-ipxe-tags.json artifact
               run: |
                   if [[ -e old-ipxe-ipxe-tags.json ]]; then
                       TAG="$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
@@ -40,6 +45,7 @@ jobs:
                   echo "::debug::NEW_TAG=$TAG"
                   echo "::set-env name=old-ipxe-ipxe-tag::${TAG}"
             - name: Compare old and new ipxe/ipxe tag
+              id: compare-releases
               env:
                   OLD_TAG: ${{ env.old-ipxe-ipxe-tag }}
                   NEW_TAG: ${{ env.ipxe-ipxe-tag }} 
@@ -50,10 +56,23 @@ jobs:
                       NEW_RELEASE='true'
                   fi
                   echo "::debug::NEW_RELEASE=$NEW_RELEASE"
-                  echo "::set-env name=new-release::$NEW_RELEASE"
-            - name: Create todays tag
-              run: printf '::set-env name=current-tag::%(%Y-%m-%d)T\n' '-1'
-              if: env.new-release
+                  echo "::set-output name=is-new-release::$NEW_RELEASE"
+            - name: Upload new ipxe-ipxe-tags.json
+              uses: actions/upload-artifact@v2.1.4
+              with:
+                  name: old-ipxe-ipxe-tags.json
+                  path: fetch-api-data-action/ipxe-ipxe-tags.json
+                  if-no-files-found: error
+              if: ${{ steps.compare-releases.outputs.new-release }}
+    build:
+        name: Build iPXE
+        runs-on: ubuntu-20.04
+        strategy:
+            matrix:
+                binary: ${{ env.BINARIES_TO_BUILD }}
+        needs: [check]
+        if: ${{ needs.check.outputs.is-new-release }}
+        steps:
             - name: Install Build Dependencies
               run: >
                   sudo
@@ -64,7 +83,6 @@ jobs:
                   genisoimage
                   jq
                   tree
-              if: env.new-release
             - name: Checkout ${{ github.repository }}
               uses: actions/checkout@v2
               with:
@@ -75,7 +93,6 @@ jobs:
                   repository: ipxe/ipxe
                   ref: ${{ env.ipxe-ipxe-tag }}
                   path: ipxe
-              if: env.new-release
             - name: Put custom config into the build dir
               run: >
                   cp
@@ -90,25 +107,62 @@ jobs:
               env:
                   BINARY: ${{ matrix.binary }}
               run: echo "::set-env name=filename::${BINARY##*/}"
-              if: env.new-release
-            - name: Make release
-              uses: eine/tip@master
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  files: ipxe/src/${{ matrix.binary }}
-                  rm: true
-                  snapshots: false
-                  tag: ${{ env.current-tag }}
-              if: env.new-release
             - name: Debug File Listing
               env:
                   ACTIONS_STEP_DEBUG: secrets.ACTIONS_STEP_DEBUG
               run: test "$ACTIONS_STEP_DEBUG" && tree
-              if: ${{ env.new-release }}
-            - name: Upload tag artifact
+            - name: Upload ${{ matrix.binary }} artifact as ${{ env.filename }}
+              id: upload-build-artifact
               uses: actions/upload-artifact@v2.1.4
               with:
-                  name: old-ipxe-ipxe-tags.json
-                  path: fetch-api-data-action/ipxe-ipxe-tags.json
+                  name: ${{ env.filename }}
+                  path: ipxe/src/${{ matrix.binary }}
                   if-no-files-found: error
-              if: env.new-release
+    create-release:
+        name: Release built iPXE
+        runs-on: ubuntu-20.04
+        outputs:
+            upload_url: ${{ steps.create-release.outputs.upload_url }}
+            release: ${{ steps.create-tag.outputs.current_tag }}
+        needs: [check, build]
+        if: ${{ needs.check.outputs.is-new-release }}
+        steps:
+            - name: Create todays tag
+              id: create-tag
+              run: |
+                  printf -v current_tag 'name=current-tag::%s-%(%Y-%m-%d)T\n' '${{ needs.check.outputs.new-release-version }}' '-1'
+                  echo "::debug::$current_tag"
+                  echo "::set-env $current_tag"
+                  echo "::set-output $current_tag"
+            - name: Create Release
+              id: create-release
+              uses: actions/create-release@v1
+              with:
+                  tag_name: ${{ needs.check.outputs.new-release-version }}-${{ env.current-tag }}
+                  release_name: Release iPXE ${{ needs.check.outputs.new-release-version }} (${{ env.current-tag }}) with HTTPS support
+                  draft: false
+                  prerelease: false
+    upload-release:
+        name: Upload built iPXE to release
+        runs-on: ubuntu-20.04
+        strategy:
+            matrix:
+                binary: ${{ env.BINARIES_TO_BUILD }}
+        needs: [create-release]
+        if: ${{ needs.check.outputs.is-new-release }}
+        steps:
+            - name: Get filename from ${{ matrix.binary }}
+              env:
+                  BINARY: ${{ matrix.binary }}
+              run: echo "::set-env name=filename::${BINARY##*/}"
+            - name: Download artifact ${{ matrix.binary }} as ${{ env.filename }}
+              uses: actions/download-artifact@v2.0.5
+              with:
+                  name: ${{ env.filename }}
+            - name: Add artifact ${{ env.filename }} to release ${{ needs.create-release.outputs.release }}
+              uses: actions/upload-release-asset@v1.0.2
+              with:
+                  upload_url: ${{ steps.create-release.outputs.upload_url }}
+                  asset_path: ${{ env.filename }}
+                  asset_name: ${{ env.filename }}
+                  asset_content_type: application/octet-stream
