@@ -26,19 +26,27 @@ jobs:
                   name: old-ipxe-ipxe-tag.json
               continue-on-error: true
             - name: Extract latest version tag from ipxe/ipxe json
-              run: echo "::set-env name=ipxe-ipxe-tag::$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
+              run: |
+                  TAG="$(jq -r '.[0].name' fetch-api-data-action/ipxe-ipxe-tags.json)"
+                  echo "::debug::OLD_TAG=$TAG"
+                  echo "::set-env name=ipxe-ipxe-tag::${TAG}"
             - name: Extract old version tag from artifact
-              run: echo "::set-env name=old-ipxe-ipxe-tag::$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
+              run: |
+                  TAG="$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
+                  echo "::debug::NEW_TAG=$TAG"
+                  echo "::set-env name=old-ipxe-ipxe-tag::${TAG}"
             - name: Compare old and new ipxe/ipxe tag
               env:
                   OLD_TAG: ${{ env.old-ipxe-ipxe-tag }}
                   NEW_TAG: ${{ env.ipxe-ipxe-tag }} 
               run: |
                   if [[ "$OLD_TAG" == "$NEW_TAG" ]]; then
-                      echo "::set-env name=new-release::false";
+                      NEW_RELEASE='false'
                   else
-                      echo "::set-env name=new-release::true";
+                      NEW_RELEASE='true'
                   fi
+                  echo "::debug::NEW_RELEASE=$NEW_RELEASE"
+                  echo "::set-env name=new-release::$NEW_RELEASE"
             - name: Create todays tag
               run: printf '::set-env name=current-tag::%(%Y-%m-%d)T\n' '-1'
               if: env.new-release
@@ -85,6 +93,9 @@ jobs:
                   snapshots: false
                   tag: ${{ env.current-tag }}
               if: env.new-release
+            - name: Debug File Listing
+              run: tree
+              if: ${{ secrets.ACTIONS_STEP_DEBUG && env.new-release }}
             - name: Upload tag artifact
               uses: actions/upload-artifact@v2.1.4
               with:
