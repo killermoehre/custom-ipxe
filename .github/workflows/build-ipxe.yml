@@ -38,9 +38,18 @@ jobs:
             - name: Build iPXE EFI
               run: make -C src bin-x86_64-efi/ipxe.efi
               working-directory: ipxe
+            - name: Build iPXE undionly.kpxe
+              run: make -C src bin/undionly.kpxe
+              working-directory: ipxe
             - name: Upload ipxe.efi
               uses: actions/upload-artifact@v2.1.4
               with:
                   name: ipxe.efi
                   path: ipxe/src/bin-x86_64-efi/ipxe.efi
+                  if-no-files-found: error
+            - name: Upload undionly.kpxe
+              uses: actions/upload-artifact@v2.1.4
+              with:
+                  name: undionly.kpxe
+                  path: ipxe/src/bin/undionly.kpxe
                   if-no-files-found: error
