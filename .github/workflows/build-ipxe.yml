@@ -24,29 +24,27 @@ jobs:
               with:
                   ENDPOINT: https://api.github.com/repos/ipxe/ipxe/tags
                   SAVE_NAME: new-ipxe-ipxe-tags
-            - name: Extract latest version tag from ipxe-ipxe-tags.json
+            - name: Extract latest version tag from fetch-api-data-action/ipxe-ipxe-tags.json
               id: new-ipxe-ipxe-tag
               run: |
-                  TAG="$(jq -r '.[0].name' new-ipxe-ipxe-tags.json)"
+                  TAG="$(jq -r '.[0].name' fetch-api-data-action/new-ipxe-ipxe-tags.json)"
                   echo "::debug::OLD_TAG=$TAG"
                   echo "::set-env name=new-ipxe-ipxe-tag::${TAG}"
                   echo "::set-output name=new-release-version::${TAG}"
-              working-directory: fetch-api-data-action
             - name: Extract old version tag from old-ipxe-ipxe-tags.json
               run: |
-                  if [[ -e old-ipxe-ipxe-tags.json ]]; then
-                      TAG="$(jq -r '.[0].name' old-ipxe-ipxe-tags.json)"
+                  if [[ -e fetch-api-data-action/old-ipxe-ipxe-tags.json ]]; then
+                      TAG="$(jq -r '.[0].name' fetch-api-data-action/old-ipxe-ipxe-tags.json)"
                   else
                       TAG="v0.0.0"
                   fi
                   echo "::debug::NEW_TAG=$TAG"
                   echo "::set-env name=old-ipxe-ipxe-tag::${TAG}"
-              working-directory: fetch-api-data-action
             - name: Compare old and new ipxe/ipxe tag
               id: compare-releases
               env:
                   OLD_TAG: ${{ env.old-ipxe-ipxe-tag }}
-                  NEW_TAG: ${{ env.new-ipxe-ipxe-tag }} 
+                  NEW_TAG: ${{ env.new-ipxe-ipxe-tag }}
               run: |
                   if [[ "$OLD_TAG" == "$NEW_TAG" ]]; then
                       NEW_RELEASE='false'
@@ -56,8 +54,7 @@ jobs:
                   echo "::debug::NEW_RELEASE=$NEW_RELEASE"
                   echo "::set-output name=is-new-release::$NEW_RELEASE"
             - name: Rename ipxe-ipxe-tags.json
-              run: mv new-ipxe-ipxe-tags.json old-ipxe-ipxe-tags.json
-              working-directory: fetch-api-data-action
+              run: mv fetch-api-data-action/new-ipxe-ipxe-tags.json fetch-api-data-action/old-ipxe-ipxe-tags.json
               if: ${{ steps.compare-releases.outputs.is-new-release }}
             - name: Upload old-ipxe-ipxe-tags.json
               uses: EndBug/add-and-commit@v4.4.0
@@ -70,7 +67,7 @@ jobs:
         runs-on: ubuntu-20.04
         strategy:
             matrix:
-                binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
+                binary: [bin/undionly.kpxe, bin-x86_64-efi/ipxe.efi]
         needs: [check]
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
@@ -137,7 +134,7 @@ jobs:
         runs-on: ubuntu-20.04
         strategy:
             matrix:
-                binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
+                binary: [bin/undionly.kpxe, bin-x86_64-efi/ipxe.efi]
         needs: [check, create-release]
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
