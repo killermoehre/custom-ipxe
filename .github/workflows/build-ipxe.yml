@@ -73,15 +73,7 @@ jobs:
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
             - name: Install Build Dependencies
-              run: >
-                  sudo
-                  apt-get install -y
-                  binutils-dev
-                  liblzma-dev
-                  syslinux
-                  genisoimage
-                  jq
-                  tree
+              run: sudo apt-get install -y binutils-dev liblzma-dev syslinux genisoimage jq tree
             - name: Checkout ${{ github.repository }}
               uses: actions/checkout@v2
               with:
@@ -93,10 +85,7 @@ jobs:
                   ref: ${{ needs.check.outputs.new-release-version }}
                   path: ipxe
             - name: Put custom config into the build dir
-              run: >
-                  cp
-                  custom-ipxe/general.h
-                  ipxe/src/config/local/
+              run: cp custom-ipxe/general.h ipxe/src/config/local/
             - name: Build iPXE ${{ matrix.binary }}
               env:
                   BINARY: ${{ matrix.binary }}
