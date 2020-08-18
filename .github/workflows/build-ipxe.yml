@@ -121,8 +121,8 @@ jobs:
         name: Release built iPXE
         runs-on: ubuntu-20.04
         outputs:
-            upload_url: ${{ steps.create-release.outputs.upload_url }}
             release: ${{ steps.create-tag.outputs.current_tag }}
+            upload-url: ${{ steps.create-release.outputs.upload_url }}
         needs: [check, build]
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
@@ -161,7 +161,7 @@ jobs:
             - name: Add artifact ${{ env.filename }} to release ${{ needs.create-release.outputs.release }}
               uses: actions/upload-release-asset@v1.0.2
               with:
-                  upload_url: ${{ steps.create-release.outputs.upload_url }}
+                  upload_url: ${{ needs.create-release.outputs.upload-url }}
                   asset_path: ${{ env.filename }}
                   asset_name: ${{ env.filename }}
                   asset_content_type: application/octet-stream
