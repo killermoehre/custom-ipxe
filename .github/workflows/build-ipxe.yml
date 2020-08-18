@@ -25,7 +25,7 @@ jobs:
             - name: Get old ipxe/ipxe tag from artifact
               uses: actions/download-artifact@v2.0.5
               with:
-                  name: old-ipxe-ipxe-tag.json
+                  name: old-ipxe-ipxe-tags.json
               continue-on-error: true
             - name: Extract latest version tag from ipxe/ipxe json
               id: new-ipxe-ipxe-tag
@@ -147,7 +147,7 @@ jobs:
         strategy:
             matrix:
                 binary: ['bin/undionly.kpxe', 'bin-x86_64-efi/ipxe.efi']
-        needs: [create-release]
+        needs: [check, create-release]
         if: ${{ needs.check.outputs.is-new-release }}
         steps:
             - name: Get filename from ${{ matrix.binary }}
