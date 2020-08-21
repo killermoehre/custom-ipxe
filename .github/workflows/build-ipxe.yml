@@ -47,9 +47,9 @@ jobs:
                   NEW_TAG: ${{ env.new-ipxe-ipxe-tag }}
               run: |
                   if [[ "$OLD_TAG" == "$NEW_TAG" ]]; then
-                      NEW_RELEASE='false'
+                      declare -i NEW_RELEASE=0
                   else
-                      NEW_RELEASE='true'
+                      declare -i NEW_RELEASE=1
                   fi
                   echo "::debug::NEW_RELEASE=$NEW_RELEASE"
                   echo "::set-output name=is-new-release::$NEW_RELEASE"
