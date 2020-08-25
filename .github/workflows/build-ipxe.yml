@@ -47,21 +47,21 @@ jobs:
                   NEW_TAG: ${{ env.new-ipxe-ipxe-tag }}
               run: |
                   if [[ "$OLD_TAG" == "$NEW_TAG" ]]; then
-                      declare -i NEW_RELEASE=0
+                      declare NEW_RELEASE='false'
                   else
-                      declare -i NEW_RELEASE=1
+                      declare NEW_RELEASE='true'
                   fi
                   echo "::debug::NEW_RELEASE=$NEW_RELEASE"
                   echo "::set-output name=is-new-release::$NEW_RELEASE"
             - name: Rename ipxe-ipxe-tags.json
               run: mv fetch-api-data-action/new-ipxe-ipxe-tags.json fetch-api-data-action/old-ipxe-ipxe-tags.json
-              if: ${{ steps.compare-releases.outputs.is-new-release }}
+              if: ${{ steps.compare-releases.outputs.is-new-release == 'true' }}
             - name: Upload old-ipxe-ipxe-tags.json
               uses: EndBug/add-and-commit@v4.4.0
               with:
                   add: fetch-api-data-action/old-ipxe-ipxe-tags.json
                   message: New upstream tag ${{ env.new-ipxe-ipxe-tag }}
-              if: ${{ steps.compare-releases.outputs.is-new-release }}
+              if: ${{ steps.compare-releases.outputs.is-new-release == 'true' }}
     build:
         name: Build iPXE
         runs-on: ubuntu-20.04
@@ -69,7 +69,7 @@ jobs:
             matrix:
                 binary: [bin/undionly.kpxe, bin-x86_64-efi/ipxe.efi]
         needs: [check]
-        if: ${{ needs.check.outputs.is-new-release }}
+        if: ${{ needs.check.outputs.is-new-release == 'true' }}
         steps:
             - name: Install Build Dependencies
               run: sudo apt-get install -y binutils-dev liblzma-dev syslinux genisoimage jq tree
@@ -112,7 +112,7 @@ jobs:
             release: ${{ steps.create-tag.outputs.current_tag }}
             upload-url: ${{ steps.create-release.outputs.upload_url }}
         needs: [check, build]
-        if: ${{ needs.check.outputs.is-new-release }}
+        if: ${{ needs.check.outputs.is-new-release == 'true' }}
         steps:
             - name: Create todays tag
               id: create-tag
@@ -136,7 +136,7 @@ jobs:
             matrix:
                 binary: [bin/undionly.kpxe, bin-x86_64-efi/ipxe.efi]
         needs: [check, create-release]
-        if: ${{ needs.check.outputs.is-new-release }}
+        if: ${{ needs.check.outputs.is-new-release == 'true' }}
         steps:
             - name: Get filename from ${{ matrix.binary }}
               env:
